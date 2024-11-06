@@ -11,3 +11,50 @@
 //mbyllë lidhjen dhe të jetë në gjendje ta rikuperojë atë automatikisht nëse klienti rifutet;
 //6.Të jetë në gjendje të jap qasje të plotë të paktën njërit klient për qasje në folderat/
 //përmbajtjen në file-t në server.
+
+using System.Net;
+using System.Net.Sockets;
+
+
+public class Server
+{
+    private static readonly int port = 8080;
+    private static readonly IPAddress ipAddress = IPAddress.Parse("127.0.0.1");
+    private static TcpListener listener;
+    private static List<TcpClient> clients = new List<TcpClient>();
+    private const int connectionThreshold = 4;
+    private const int timeoutDuration = 60000;
+    private static Dictionary<TcpClient, string> clientPermissions = new Dictionary<TcpClient, string>();
+    private static TcpClient fullAccessClient = null;
+    private static readonly string logFilePath = "server_log.txt";
+
+    public static void Start()
+    {
+        listener = new TcpListener(ipAddress, port);
+        listener.Start();
+        Console.WriteLine("Server started...");
+
+        while (true)
+        {
+            if (clients.Count < connectionThreshold)
+            {
+                TcpClient client = listener.AcceptTcpClient();
+                clients.Add(client);
+                Console.WriteLine("Client connected.");
+            }
+            else
+            {
+                Console.WriteLine("Connection threshold reached. New connections will wait.");
+            }
+        }
+    }
+
+}
+
+class Program
+{
+    static void Main(string[] args)
+    {
+        Server.Start();
+    }
+}
