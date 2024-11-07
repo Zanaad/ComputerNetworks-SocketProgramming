@@ -20,33 +20,42 @@ public class Server
 {
     private static readonly int port = 8080;
     private static readonly IPAddress ipAddress = IPAddress.Parse("127.0.0.1");
-    private static TcpListener listener;
-    private static List<TcpClient> clients = new List<TcpClient>();
+    private static Socket listener;
+    private static List<Socket> clients = new List<Socket>();
     private const int connectionThreshold = 4;
     private const int timeoutDuration = 60000;
-    private static Dictionary<TcpClient, string> clientPermissions = new Dictionary<TcpClient, string>();
-    private static TcpClient fullAccessClient = null;
+    private static Dictionary<Socket, string> clientPermissions = new Dictionary<Socket, string>();
+    private static Socket fullAccessClient = null;
     private static readonly string logFilePath = "server_log.txt";
 
     public static void Start()
     {
-        listener = new TcpListener(ipAddress, port);
-        listener.Start();
+        listener = new Socket(ipAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+        listener.Bind(new IPEndPoint(ipAddress, port));
+        listener.Listen(connectionThreshold);
         Console.WriteLine("Server started...");
 
         while (true)
         {
             if (clients.Count < connectionThreshold)
             {
-                TcpClient client = listener.AcceptTcpClient();
+                Socket client = listener.Accept();
                 clients.Add(client);
                 Console.WriteLine("Client connected.");
+
+                LogMessage(client, "Client connected");
             }
             else
             {
                 Console.WriteLine("Connection threshold reached. New connections will wait.");
             }
         }
+    }
+    private static void LogMessage(Socket client, string message)
+    {
+        var clientEndPoint = client.RemoteEndPoint.ToString();
+        string logMessage = $"{DateTime.Now} - {clientEndPoint} - {message}";
+        File.AppendAllText(logFilePath, logMessage + Environment.NewLine);
     }
 
 }
