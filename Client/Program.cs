@@ -10,3 +10,54 @@
 //8.Të ketë qasje të plotë në folderat/përmbajtjen në server;
 //9.Klientët me privilegje të plota të kenë kohë përgjigjeje më të shpejtë se klientët e tjerë që
 //kanë vetëm read permission.
+
+
+using System;
+using System.IO;
+using System.Net;
+using System.Net.Sockets;
+using System.Text;
+using System.Threading;
+
+public class Client
+{
+    private static readonly int port = 8080;
+    private static readonly IPAddress serverIpAddress = IPAddress.Parse("127.0.0.1");
+    private static Socket clientSocket;
+
+    public static void Start()
+    {
+        try
+        {
+            // Krijo socket dhe lidhu me serverin
+            clientSocket = new Socket(serverIpAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+            clientSocket.Connect(new IPEndPoint(serverIpAddress, port));
+            Console.WriteLine("Connected to the server.");
+
+            // Krijo një thread për të pranuar mesazhe nga serveri
+            //Thread receiveThread = new Thread(ReceiveMessages);
+            //receiveThread.Start();
+
+            // Dërgo mesazhe te serveri
+            while (true)
+            {
+                string message = Console.ReadLine();
+               // SendMessage(message);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("Error: " + ex.Message);
+        }
+    }
+}
+
+public class Program
+{
+    static void Main(string[] args)
+    {
+        Client.Start();
+    }
+}
+
+
