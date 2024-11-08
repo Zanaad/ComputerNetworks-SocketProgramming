@@ -81,18 +81,24 @@ private static async Task HandleClientAsync(Socket client){
                         Console.WriteLine("Full access granted to this client.");
                     }
                     string response ="Message received";
-                    
+                    byte[] responseBytes = System.Text.Encoding.UTF8.GetBytes(response);
+                await Task.Factory.StartNew(() => client.Send(responseBytes));
+
                     }
               }
 
         }
+        catch(SocketException ex){
+            Console.WriteLine($"Error communicating with client: {ex.Message}");
+
+        }
+        finally{
+            clients.Remove(client);
+        LogMessage(client, "Client disconnected");
+        Console.WriteLine("Client disconnected.");
+        }
     }
 }
-
-
-
-
-
 
 
 
