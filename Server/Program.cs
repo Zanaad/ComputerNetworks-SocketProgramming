@@ -102,15 +102,16 @@ private static async Task HandleClientAsync(Socket client){
 
 
 
+
     private static void LogMessage(Socket client, string message)
     {
         var clientEndPoint = client.RemoteEndPoint.ToString();
         string logMessage = $"{DateTime.Now} - {clientEndPoint} - {message}";
         File.AppendAllText(logFilePath, logMessage + Environment.NewLine);
+        
     }
 
 }
-
 
 class Program
 {
@@ -119,3 +120,4 @@ class Program
         Server.Start();
     }
 }
+
