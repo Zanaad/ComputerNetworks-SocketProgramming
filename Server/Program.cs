@@ -12,8 +12,12 @@
 //6.Të jetë në gjendje të jap qasje të plotë të paktën njërit klient për qasje në folderat/
 //përmbajtjen në file-t në server.
 
+using System;
 using System.Net;
 using System.Net.Sockets;
+using System.Collections.Generic;
+using System.IO;
+using System.Threading.Tasks;
 
 
 public class Server
@@ -34,6 +38,10 @@ public class Server
         listener.Bind(new IPEndPoint(ipAddress, port));
         listener.Listen(connectionThreshold);
         Console.WriteLine("Server started...");
+
+Task.Run(() => AcceptClientsAsync());
+
+Console.ReadLine();
 
         while (true)
         {
