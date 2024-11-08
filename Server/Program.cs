@@ -1,18 +1,4 @@
-﻿//Serveri
-//1. Të vendosen variabla te cilat përmbajnë numrin e portit (numri i portit të jetë i
-//çfarëdoshëm) dhe IP adresën;
-//2.Të jetë në gjendje të dëgjojë (listën) të paktën të gjithë anëtaret e grupit. Nëse numri i
-//lidhjeve kalon një prag të caktuar, serveri duhet të refuzojë lidhjet e reja ose t'i vë në pritje;
-//3. Të menaxhojë kërkesat e pajisjeve që dërgojnë request (ku secili anëtar i grupit duhet
-//ta ekzekutojë të paktën një kërkesë në server) dhe t’i logojë të gjitha për auditim të
-//mëvonshëm, duke përfshirë timestamp dhe IP-në e dërguesit;
-//4.Të jetë në gjendje të lexoje mesazhet që dërgohen nga klientët dhe t’i ruajë për monitorim;
-//5.Nëse një klient nuk dërgon mesazhe brenda një periudhe të caktuar kohe, serveri duhet ta
-//mbyllë lidhjen dhe të jetë në gjendje ta rikuperojë atë automatikisht nëse klienti rifutet;
-//6.Të jetë në gjendje të jap qasje të plotë të paktën njërit klient për qasje në folderat/
-//përmbajtjen në file-t në server.
-
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
@@ -28,12 +14,19 @@ class Server
     private static string fullAccessClient = null;
     private static object lockObj = new object();
 
-    private static readonly string baseDirectory = @"C:\Users\zanaa\source\repos\ComputerNetworks-SocketProgramming\Files";
+    // Define base directories for logs and client files
+    private static readonly string baseDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"..\..\..\");
+    private static readonly string logsDirectory = Path.Combine(baseDirectory, "Logs");
+    private static readonly string clientFilesDirectory = Path.Combine(baseDirectory, "ClientFiles");
 
     static void Main(string[] args)
     {
         Console.WriteLine("Starting server...");
-        Directory.CreateDirectory(baseDirectory);
+
+        // Create directories if they don't exist
+        Directory.CreateDirectory(logsDirectory);
+        Directory.CreateDirectory(clientFilesDirectory);
+
         StartServer();
     }
 
@@ -90,7 +83,7 @@ class Server
                     {
                         // Handle the file path for read-only clients
                         string filename = parts.Length > 1 ? parts[1] : "server_log.txt";
-                        string fullPath = Path.Combine(baseDirectory, filename);
+                        string fullPath = Path.Combine(clientFilesDirectory, filename);
                         Console.WriteLine($"Read-Only client attempting to read file: {Path.GetFileName(fullPath)}");
                         SendFileContent(clientSocket, fullPath);
                     }
@@ -123,7 +116,7 @@ class Server
         string[] parts = command.Split(' ', 3);
         string action = parts[0].ToUpper();
         string filename = parts.Length > 1 ? parts[1] : "server_file.txt";
-        string fullPath = Path.Combine(baseDirectory, filename);
+        string fullPath = Path.Combine(clientFilesDirectory, filename);
         string content = parts.Length > 2 ? parts[2] : null;
 
         switch (action)
@@ -198,20 +191,20 @@ class Server
         var clientEndPoint = client.RemoteEndPoint.ToString();
         string logEntry = $"[{DateTime.Now}] - {clientEndPoint} - Client connected - {accessType}";
         Console.WriteLine(logEntry);
-        File.AppendAllText(Path.Combine(baseDirectory, "server_log.txt"), logEntry + Environment.NewLine);
+        File.AppendAllText(Path.Combine(logsDirectory, "server_log.txt"), logEntry + Environment.NewLine);
     }
 
     private static void LogRequest(string clientIP, string permission, string request)
     {
         string logEntry = $"[{DateTime.Now}] {clientIP} ({permission}) requested: {request}";
         Console.WriteLine(logEntry);
-        File.AppendAllText(Path.Combine(baseDirectory, "server_log.txt"), logEntry + Environment.NewLine);
+        File.AppendAllText(Path.Combine(logsDirectory, "server_log.txt"), logEntry + Environment.NewLine);
     }
 
     private static void LogMessageForMonitoring(string clientIP, string message)
     {
         string logEntry = $"[{DateTime.Now}] {clientIP}: {message}";
-        File.AppendAllText(Path.Combine(baseDirectory, "client_messages_log.txt"), logEntry + Environment.NewLine);
+        File.AppendAllText(Path.Combine(logsDirectory, "client_messages_log.txt"), logEntry + Environment.NewLine);
     }
 
     private static string GetLocalIPAddress()
