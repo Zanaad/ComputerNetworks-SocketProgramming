@@ -1,63 +1,70 @@
-﻿//Klienti
-//1. Të krijohet socket lidhja me server;
-//2.Njëri nga pajisjet(klientët) të ketë privilegjet write(), read(), execute() (qasje të plotë;
-//execute() përfshin ekzekutimin e komandave të ndryshme në server);
-//3.Klientët tjerë të kenë vetëm read() permission;
-//4.Të behet lidhja me serverin duke përcaktuar saktë portin dhe IP Adresën e serverit;
-//5.Të definohen saktë socket-at e serverit dhe lidhja të mos dështojë;
-//6.Të jetë në gjendje të lexojë përgjigjet që i kthehen nga serveri;
-//7.Të dërgojë mesazh serverit në formë të tekstit;
-//8.Të ketë qasje të plotë në folderat/përmbajtjen në server;
-//9.Klientët me privilegje të plota të kenë kohë përgjigjeje më të shpejtë se klientët e tjerë që
-//kanë vetëm read permission.
-
-
-using System;
-using System.IO;
+﻿using System;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
-using System.Threading;
 
-public class Client
+class Client
 {
-    private static readonly int port = 8080;
-    private static readonly IPAddress serverIpAddress = IPAddress.Parse("127.0.0.1");
     private static Socket clientSocket;
+    private static bool isReadOnly = false; // Track if client has read-only access
 
-    public static void Start()
-    {
-        try
-        {
-            // Krijo socket dhe lidhu me serverin
-            clientSocket = new Socket(serverIpAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
-            clientSocket.Connect(new IPEndPoint(serverIpAddress, port));
-            Console.WriteLine("Connected to the server.");
-
-            // Krijo një thread për të pranuar mesazhe nga serveri
-            //Thread receiveThread = new Thread(ReceiveMessages);
-            //receiveThread.Start();
-
-            // Dërgo mesazhe te serveri
-            while (true)
-            {
-                string message = Console.ReadLine();
-               // SendMessage(message);
-            }
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine("Error: " + ex.Message);
-        }
-    }
-}
-
-public class Program
-{
     static void Main(string[] args)
     {
-        Client.Start();
+        Console.Write("Enter Server IP: ");
+        string serverIP = Console.ReadLine();
+
+        Console.Write("Enter Server Port: ");
+        int port = int.Parse(Console.ReadLine());
+
+        ConnectToServer(serverIP, port);
+
+        // Check access level based on the server's initial response
+        string accessResponse = ReceiveMessage();
+
+        if (accessResponse.Contains("Read-Only"))
+        {
+            isReadOnly = true;
+            Console.WriteLine("You have been granted read-only access. Use 'READ [filename]' to read from a file or 'EXIT' to disconnect.");
+        }
+        else
+        {
+            Console.WriteLine("You have full access.");
+        }
+
+        // Main command loop
+        while (true)
+        {
+            if (!isReadOnly)
+            {
+                Console.WriteLine("Enter command (CREATE [filename], WRITE [filename] [content], READ [filename], DELETE [filename], EXIT):");
+            }
+            else
+            {
+                Console.WriteLine("Enter command (READ [filename], EXIT):");
+            }
+
+            string command = Console.ReadLine();
+
+            // Check command validity based on access level
+            if (isReadOnly && !command.StartsWith("READ", StringComparison.OrdinalIgnoreCase) && !command.Equals("EXIT", StringComparison.OrdinalIgnoreCase))
+            {
+                Console.WriteLine("You have read-only access. Only 'READ [filename]' and 'EXIT' commands are allowed.");
+                continue;
+            }
+
+            SendMessage(command);
+
+            if (command.ToUpper().StartsWith("EXIT")) break;
+
+            string response = ReceiveMessage();
+            Console.WriteLine("Server response: " + response);
+        }
+
+        clientSocket.Shutdown(SocketShutdown.Both);
+        clientSocket.Close();
     }
+
+    // Metodat ...
+
+
 }
-
-
