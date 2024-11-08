@@ -114,4 +114,113 @@ class Server
             Console.WriteLine($"Connection with {clientIP} closed.");
         }
     }
+
+    private static void HandleFullAccessCommands(Socket clientSocket, string command)
+    {
+        string[] parts = command.Split(' ', 3);
+        string action = parts[0].ToUpper();
+        string filename = parts.Length > 1 ? parts[1] : "server_file.txt";
+        string fullPath = Path.Combine(baseDirectory, filename);
+        string content = parts.Length > 2 ? parts[2] : null;
+
+        switch (action)
+        {
+            case "READ":
+                SendFileContent(clientSocket, fullPath);
+                break;
+            case "WRITE":
+                if (content != null)
+                {
+                    File.AppendAllText(fullPath, content);
+                    SendMessage(clientSocket, $"Content written to {filename}.");
+                }
+                else
+                {
+                    SendMessage(clientSocket, "No content provided for writing.");
+                }
+                break;
+            case "CREATE":
+                File.Create(fullPath).Close();
+                SendMessage(clientSocket, $"File {filename} created successfully.");
+                break;
+            case "DELETE":
+                if (File.Exists(fullPath))
+                {
+                    File.Delete(fullPath);
+                    SendMessage(clientSocket, $"File {filename} deleted successfully.");
+                }
+                else
+                {
+                    SendMessage(clientSocket, $"File {filename} does not exist.");
+                }
+                break;
+            case "EXIT":
+                SendMessage(clientSocket, "Goodbye!");
+                clientSocket.Close();
+                break;
+            default:
+                SendMessage(clientSocket, "Unknown command.");
+                break;
+        }
+    }
+
+    private static void SendFileContent(Socket clientSocket, string filename)
+    {
+        if (File.Exists(filename))
+        {
+            if (new FileInfo(filename).Length == 0)
+            {
+                SendMessage(clientSocket, $"File {filename} is empty.");
+            }
+            else
+            {
+                string content = File.ReadAllText(filename);
+                SendMessage(clientSocket, content);
+            }
+        }
+        else
+        {
+            SendMessage(clientSocket, $"File {filename} does not exist.");
+        }
+    }
+
+    private static void SendMessage(Socket clientSocket, string message)
+    {
+        byte[] data = Encoding.UTF8.GetBytes(message);
+        clientSocket.Send(data);
+    }
+
+    private static void LogConnection(Socket client, string accessType)
+    {
+        var clientEndPoint = client.RemoteEndPoint.ToString();
+        string logEntry = $"[{DateTime.Now}] - {clientEndPoint} - Client connected - {accessType}";
+        Console.WriteLine(logEntry);
+        File.AppendAllText(Path.Combine(baseDirectory, "server_log.txt"), logEntry + Environment.NewLine);
+    }
+
+    private static void LogRequest(string clientIP, string permission, string request)
+    {
+        string logEntry = $"[{DateTime.Now}] {clientIP} ({permission}) requested: {request}";
+        Console.WriteLine(logEntry);
+        File.AppendAllText(Path.Combine(baseDirectory, "server_log.txt"), logEntry + Environment.NewLine);
+    }
+
+    private static void LogMessageForMonitoring(string clientIP, string message)
+    {
+        string logEntry = $"[{DateTime.Now}] {clientIP}: {message}";
+        File.AppendAllText(Path.Combine(baseDirectory, "client_messages_log.txt"), logEntry + Environment.NewLine);
+    }
+
+    private static string GetLocalIPAddress()
+    {
+        var host = Dns.GetHostEntry(Dns.GetHostName());
+        foreach (var ip in host.AddressList)
+        {
+            if (ip.AddressFamily == AddressFamily.InterNetwork)
+            {
+                return ip.ToString();
+            }
+        }
+        throw new Exception("No network adapters with an IPv4 address in the system!");
+    }
 }
