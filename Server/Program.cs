@@ -13,65 +13,105 @@
 //përmbajtjen në file-t në server.
 
 using System;
-using System.Net;
-using System.Net.Sockets;
 using System.Collections.Generic;
 using System.IO;
-using System.Threading.Tasks;
+using System.Net;
+using System.Net.Sockets;
+using System.Text;
+using System.Threading;
 
-
-public class Server
+class Server
 {
-    private static readonly int port = 8080;
-    private static readonly IPAddress ipAddress = IPAddress.Parse("127.0.0.1");
     private static Socket listener;
-    private static List<Socket> clients = new List<Socket>();
-    private const int connectionThreshold = 4;
-    private const int timeoutDuration = 60000;
-    private static Dictionary<Socket, string> clientPermissions = new Dictionary<Socket, string>();
-    private static Socket fullAccessClient = null;
-    private static readonly string logFilePath = "server_log.txt";
+    private static List<Socket> clientSockets = new List<Socket>();
+    private static int port = 5000;
+    private static string fullAccessClient = null;
+    private static object lockObj = new object();
 
-    public static void Start()
+    private static readonly string baseDirectory = @"C:\Users\zanaa\source\repos\Sockett\Files";
+
+    static void Main(string[] args)
     {
-        listener = new Socket(ipAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
-        listener.Bind(new IPEndPoint(ipAddress, port));
-        listener.Listen(connectionThreshold);
-        Console.WriteLine("Server started...");
+        Console.WriteLine("Starting server...");
+        Directory.CreateDirectory(baseDirectory);
+        StartServer();
+    }
 
-Task.Run(() => AcceptClientsAsync());
+    private static void HandleClient(Socket clientSocket)
+    {
+        IPEndPoint remoteIpEndPoint = clientSocket.RemoteEndPoint as IPEndPoint;
+        string clientIP = remoteIpEndPoint.Address.ToString();
 
-Console.ReadLine();
-
-        while (true)
+        string clientPermission;
+        lock (lockObj)
         {
-            if (clients.Count < connectionThreshold)
+            if (fullAccessClient == null)
             {
-                Socket client = listener.Accept();
-                clients.Add(client);
-                Console.WriteLine("Client connected.");
-
-                LogMessage(client, "Client connected");
+                fullAccessClient = clientIP;
+                clientPermission = "Full";
+                LogConnection(clientSocket, "Full-access granted");
             }
             else
             {
-                Console.WriteLine("Connection threshold reached. New connections will wait.");
+                clientPermission = "Read-Only";
+                LogConnection(clientSocket, "Read-only access granted");
             }
         }
-    }
-    private static void LogMessage(Socket client, string message)
-    {
-        var clientEndPoint = client.RemoteEndPoint.ToString();
-        string logMessage = $"{DateTime.Now} - {clientEndPoint} - {message}";
-        File.AppendAllText(logFilePath, logMessage + Environment.NewLine);
-    }
 
-}
+        SendMessage(clientSocket, $"You have been granted {clientPermission} access.");
 
-class Program
-{
-    static void Main(string[] args)
-    {
-        Server.Start();
+        try
+        {
+            while (true)
+            {
+                byte[] buffer = new byte[1024];
+                int receivedBytes = clientSocket.Receive(buffer);
+                if (receivedBytes == 0) break;
+
+                string receivedText = Encoding.UTF8.GetString(buffer, 0, receivedBytes);
+                Console.WriteLine($"Received from {clientIP} ({clientPermission}): {receivedText}");
+
+                LogRequest(clientIP, clientPermission, receivedText);
+                LogMessageForMonitoring(clientIP, receivedText);
+
+                if (clientPermission == "Full")
+                {
+                    if (receivedText.ToUpper() == "EXIT")
+                    {
+                        SendMessage(clientSocket, "Goodbye!");
+                        break;
+                    }
+                    HandleFullAccessCommands(clientSocket, receivedText);
+                }
+                else if (clientPermission == "Read-Only")
+                {
+                    string[] parts = receivedText.Split(' ');
+                    if (parts[0].Equals("READ", StringComparison.OrdinalIgnoreCase))
+                    {
+                        string filename = parts.Length > 1 ? parts[1] : "server_log.txt";
+                        SendFileContent(clientSocket, filename);
+                    }
+                    else if (receivedText.ToUpper() == "EXIT")
+                    {
+                        SendMessage(clientSocket, "Goodbye!");
+                        break;
+                    }
+                    else
+                    {
+                        SendMessage(clientSocket, "You have read-only access.");
+                    }
+                }
+            }
+        }
+        catch (SocketException)
+        {
+            Console.WriteLine($"Client {clientIP} disconnected unexpectedly.");
+        }
+        finally
+        {
+            clientSocket.Close();
+            clientSockets.Remove(clientSocket);
+            Console.WriteLine($"Connection with {clientIP} closed.");
+        }
     }
 }
