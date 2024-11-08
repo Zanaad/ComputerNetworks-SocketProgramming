@@ -1,0 +1,14 @@
+[11/8/2024 7:57:28 PM] - 192.168.0.28:61138 - Client connected - Full-access granted
+[11/8/2024 7:57:38 PM] 192.168.0.28 (Full) requested: READ server_log.txt
+[11/8/2024 7:57:50 PM] 192.168.0.28 (Full) requested: CREATE test.txt
+[11/8/2024 7:58:04 PM] 192.168.0.28 (Full) requested: WRITE test.txt Hello World
+[11/8/2024 7:58:12 PM] 192.168.0.28 (Full) requested: DELETE test.txt
+[11/8/2024 7:58:24 PM] - 192.168.0.28:61151 - Client connected - Read-only access granted
+[11/8/2024 7:58:36 PM] 192.168.0.28 (Read-Only) requested: READ server_log.txt
+[11/8/2024 7:59:42 PM] 192.168.0.28 (Read-Only) requested: READ client_messages_log.txt
+[11/8/2024 7:59:47 PM] 192.168.0.28 (Read-Only) requested: READ server_log.txt
+[11/8/2024 8:02:20 PM] - 192.168.0.28:61370 - Client connected - Full-access granted
+[11/8/2024 8:02:54 PM] - 192.168.0.28:61404 - Client connected - Read-only access granted
+[11/8/2024 8:03:01 PM] 192.168.0.28 (Read-Only) requested: READ server_log.txt
+[11/8/2024 8:03:07 PM] 192.168.0.28 (Read-Only) requested: READ zana.txt
+[11/8/2024 8:03:50 PM] 192.168.0.28 (Full) requested: READ server_log.txt

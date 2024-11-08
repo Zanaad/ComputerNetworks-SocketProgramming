@@ -28,7 +28,7 @@ class Server
     private static string fullAccessClient = null;
     private static object lockObj = new object();
 
-    private static readonly string baseDirectory = @"C:\Users\zanaa\source\repos\Sockett\Files";
+    private static readonly string baseDirectory = @"C:\Users\zanaa\source\repos\ComputerNetworks-SocketProgramming\Files";
 
     static void Main(string[] args)
     {
@@ -88,8 +88,11 @@ class Server
                     string[] parts = receivedText.Split(' ');
                     if (parts[0].Equals("READ", StringComparison.OrdinalIgnoreCase))
                     {
+                        // Handle the file path for read-only clients
                         string filename = parts.Length > 1 ? parts[1] : "server_log.txt";
-                        SendFileContent(clientSocket, filename);
+                        string fullPath = Path.Combine(baseDirectory, filename);
+                        Console.WriteLine($"Read-Only client attempting to read file: {Path.GetFileName(fullPath)}");
+                        SendFileContent(clientSocket, fullPath);
                     }
                     else if (receivedText.ToUpper() == "EXIT")
                     {
