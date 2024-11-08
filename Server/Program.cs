@@ -43,6 +43,7 @@ Task.Run(() => AcceptClientsAsync());
 
 Console.ReadLine();
 
+private static async Task AcceptClientsAsync(){
         while (true)
         {
             if (clients.Count < connectionThreshold)
@@ -56,9 +57,45 @@ Console.ReadLine();
             else
             {
                 Console.WriteLine("Connection threshold reached. New connections will wait.");
+                 await Task.Delay(500);
             }
         }
+        }
     }
+
+private static async Task HandleClientAsync(Socket client){
+    try{
+        using(client){
+            var buffer =new byte[1024];
+            int bytesRead;
+            client.ReceiveTimeout = timeoutDuration;
+
+              while ((bytesRead = await Task.Factory.StartNew(() => client.Receive(buffer))) > 0){
+                  string message = System.Text.Encoding.UTF8.GetString(buffer, 0, bytesRead);
+                    Console.WriteLine($"Received message from client: {message}");
+
+                    LogMessage(client, $"Received message: {message}");
+
+                    if (clientPermissions.ContainsKey(client) && clientPermissions[client] == "full"){
+                        fullAccessClient = client;
+                        Console.WriteLine("Full access granted to this client.");
+                    }
+                    string response ="Message received";
+                    
+                    }
+              }
+
+        }
+    }
+}
+
+
+
+
+
+
+
+
     private static void LogMessage(Socket client, string message)
     {
         var clientEndPoint = client.RemoteEndPoint.ToString();
@@ -67,6 +104,7 @@ Console.ReadLine();
     }
 
 }
+
 
 class Program
 {
