@@ -29,6 +29,17 @@ class Server
 
         listener = new Socket (AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
         listener.Bind(new IPEndPoint(GetLocalIPAddress.Parse(localIP), port));
+
+         listener.Listen(10);
+
+         Console.WriteLine("Server listening on port" + port);
+          while (true){
+            clientSockets clientSocket = listener.Accept();
+            clientSockets.Add(clientSocket);
+            Thread clientThread = new Thread(() => HandleClient(clientSocket));
+            clientThread.Start();
+          }
+    }
     private static void StartServer()
     {
         // Get local IP address dynamically
