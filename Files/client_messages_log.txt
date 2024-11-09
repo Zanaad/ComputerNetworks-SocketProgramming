@@ -1,0 +1,10 @@
+[11/8/2024 7:57:38 PM] 192.168.0.28: READ server_log.txt
+[11/8/2024 7:57:50 PM] 192.168.0.28: CREATE test.txt
+[11/8/2024 7:58:04 PM] 192.168.0.28: WRITE test.txt Hello World
+[11/8/2024 7:58:12 PM] 192.168.0.28: DELETE test.txt
+[11/8/2024 7:58:36 PM] 192.168.0.28: READ server_log.txt
+[11/8/2024 7:59:42 PM] 192.168.0.28: READ client_messages_log.txt
+[11/8/2024 7:59:47 PM] 192.168.0.28: READ server_log.txt
+[11/8/2024 8:03:01 PM] 192.168.0.28: READ server_log.txt
+[11/8/2024 8:03:07 PM] 192.168.0.28: READ zana.txt
+[11/8/2024 8:03:50 PM] 192.168.0.28: READ server_log.txt
