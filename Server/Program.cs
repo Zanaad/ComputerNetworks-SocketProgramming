@@ -24,6 +24,13 @@ class Server
     }
     private static void StartServer()
     {
+        string localIP = GetLocalIPAddress();
+        Console.WriteLine("Server IP Address: " + localIP);
+
+        listener = new Socket (AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+        listener.Bind(new IPEndPoint(GetLocalIPAddress.Parse(localIP), port));
+    private static void StartServer()
+    {
         // Get local IP address dynamically
         string localIP = GetLocalIPAddress();
         Console.WriteLine("Server IP Address: " + localIP);
