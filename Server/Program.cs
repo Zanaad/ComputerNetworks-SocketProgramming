@@ -13,6 +13,9 @@ class Server
     private static int port = 5000;
     private static string fullAccessClient = null;
     private static object lockObj = new object();
+    private static int maxConnections = 2; // Set the maximum number of connections
+    private static Semaphore connectionSemaphore = new Semaphore(maxConnections, maxConnections);
+
 
     private static readonly string baseDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"..\..\..\..\Files");
 
@@ -24,23 +27,39 @@ class Server
     }
     private static void StartServer()
     {
-        // Get local IP address dynamically
         string localIP = GetLocalIPAddress();
         Console.WriteLine("Server IP Address: " + localIP);
 
-        // Initialize the listener
         listener = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
         listener.Bind(new IPEndPoint(IPAddress.Parse(localIP), port));
-        listener.Listen(10);
+        listener.Listen(maxConnections);
 
-        Console.WriteLine("Server listening on port " + port);
+        Console.WriteLine($"Server listening on port {port}. Max connections: {maxConnections}");
 
         while (true)
         {
-            // Accept incoming client connections asynchronously
+            if (!connectionSemaphore.WaitOne(0)) // Instant check without blocking
+            {
+                Console.WriteLine("Max connections reached, new connections are being put on hold.");
+                connectionSemaphore.WaitOne(); // Block until a slot is available
+            }
+
+            // Accept new client connection
             Socket clientSocket = listener.Accept();
             clientSockets.Add(clientSocket);
-            Thread clientThread = new Thread(() => HandleClient(clientSocket));
+
+            Thread clientThread = new Thread(() =>
+            {
+                try
+                {
+                    HandleClient(clientSocket);
+                }
+                finally
+                {
+                    // Release the spot when done
+                    connectionSemaphore.Release();
+                }
+            });
             clientThread.Start();
         }
     }

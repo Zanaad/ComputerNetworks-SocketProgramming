@@ -7,14 +7,15 @@ class Client
 {
     private static Socket clientSocket;
     private static bool isReadOnly = false; // Track if client has read-only access
-
+    private static string serverIP = "192.168.0.109";
+    private static int port = 5000;
     static void Main(string[] args)
     {
-        Console.Write("Enter Server IP: ");
-        string serverIP = Console.ReadLine();
+        //Console.Write("Enter Server IP: ");
+        //string serverIP = Console.ReadLine();
 
-        Console.Write("Enter Server Port: ");
-        int port = int.Parse(Console.ReadLine());
+        //Console.Write("Enter Server Port: ");
+        //int port = int.Parse(Console.ReadLine());
 
         ConnectToServer(serverIP, port);
 

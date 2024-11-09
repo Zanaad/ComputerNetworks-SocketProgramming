@@ -12,3 +12,34 @@
 [11/9/2024 4:12:36 PM] 192.168.0.28 (Read-Only) requested: READ server_log.txt
 [11/9/2024 4:12:52 PM] 192.168.0.28 (Read-Only) requested: LIST
 [11/9/2024 4:13:00 PM] 192.168.0.28 (Read-Only) requested: EXIT
+[9/11/2024 8:41:09 PM] - 192.168.0.109:53963 - Client connected - Full-access granted
+[9/11/2024 8:41:13 PM] 192.168.0.109 (Full) requested: info
+[9/11/2024 8:41:15 PM] 192.168.0.109 (Full) requested: list
+[9/11/2024 8:41:33 PM] 192.168.0.109 (Full) requested: read zam
+[9/11/2024 8:41:38 PM] 192.168.0.109 (Full) requested: read zana.txt
+[9/11/2024 8:41:56 PM] 192.168.0.109 (Full) requested: create yllka
+[9/11/2024 8:42:11 PM] 192.168.0.109 (Full) requested: write yllka hello world!
+[9/11/2024 8:42:16 PM] 192.168.0.109 (Full) requested: read yllka
+[9/11/2024 8:42:20 PM] 192.168.0.109 (Full) requested: list
+[9/11/2024 8:42:38 PM] - 192.168.0.109:53972 - Client connected - Read-only access granted
+[9/11/2024 8:42:43 PM] 192.168.0.109 (Read-Only) requested: list
+[9/11/2024 8:42:50 PM] 192.168.0.109 (Read-Only) requested: read yllka
+[9/11/2024 8:43:00 PM] 192.168.0.109 (Read-Only) requested: read zana.txt.txt
+[9/11/2024 8:49:01 PM] - 192.168.0.109:54562 - Client connected - Full-access granted
+[9/11/2024 8:49:07 PM] - 192.168.0.109:54568 - Client connected - Read-only access granted
+[9/11/2024 8:49:43 PM] 192.168.0.109 (Read-Only) requested: list
+[9/11/2024 8:50:36 PM] - 192.168.0.109:54577 - Client connected - Full-access granted
+[9/11/2024 8:51:05 PM] 192.168.0.109 (Full) requested: exit
+[9/11/2024 8:51:06 PM] - 192.168.0.109:54581 - Client connected - Read-only access granted
+[9/11/2024 9:02:16 PM] - 192.168.0.109:54702 - Client connected - Full-access granted
+[9/11/2024 9:06:20 PM] - 192.168.0.109:54737 - Client connected - Full-access granted
+[9/11/2024 9:06:46 PM] 192.168.0.109 (Full) requested: exit
+[9/11/2024 9:06:46 PM] - 192.168.0.109:54740 - Client connected - Read-only access granted
+[9/11/2024 9:09:53 PM] - 192.168.0.109:54762 - Client connected - Full-access granted
+[9/11/2024 9:10:31 PM] 192.168.0.109 (Full) requested: exit
+[9/11/2024 9:10:31 PM] - 192.168.0.109:54766 - Client connected - Read-only access granted
+[9/11/2024 9:10:57 PM] - 192.168.0.109:54770 - Client connected - Full-access granted
+[9/11/2024 9:11:04 PM] - 192.168.0.109:54771 - Client connected - Read-only access granted
+[9/11/2024 9:11:22 PM] 192.168.0.109 (Read-Only) requested: list
+[9/11/2024 9:11:26 PM] 192.168.0.109 (Read-Only) requested: exit
+[9/11/2024 9:11:30 PM] - 192.168.0.109:54775 - Client connected - Read-only access granted
