@@ -14,9 +14,7 @@ class Server
     private static string fullAccessClient = null;
     private static object lockObj = new object();
 
-    private static readonly string baseDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"..\..\..\");
-    private static readonly string logsDirectory = Path.Combine(baseDirectory, "Logs");
-    private static readonly string clientFilesDirectory = Path.Combine(baseDirectory, "ClientFiles");
+    private static readonly string baseDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"..\..\Files");
 
     static void Main(string[] args)
     {
@@ -24,7 +22,28 @@ class Server
         Directory.CreateDirectory(baseDirectory);
         StartServer();
     }
+    private static void StartServer()
+    {
+        // Get local IP address dynamically
+        string localIP = GetLocalIPAddress();
+        Console.WriteLine("Server IP Address: " + localIP);
 
+        // Initialize the listener
+        listener = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+        listener.Bind(new IPEndPoint(IPAddress.Parse(localIP), port));
+        listener.Listen(10);
+
+        Console.WriteLine("Server listening on port " + port);
+
+        while (true)
+        {
+            // Accept incoming client connections asynchronously
+            Socket clientSocket = listener.Accept();
+            clientSockets.Add(clientSocket);
+            Thread clientThread = new Thread(() => HandleClient(clientSocket));
+            clientThread.Start();
+        }
+    }
     private static void HandleClient(Socket clientSocket)
     {
         IPEndPoint remoteIpEndPoint = clientSocket.RemoteEndPoint as IPEndPoint;
@@ -108,11 +127,17 @@ class Server
         string[] parts = command.Split(' ', 3);
         string action = parts[0].ToUpper();
         string filename = parts.Length > 1 ? parts[1] : "server_file.txt";
-        string fullPath = Path.Combine(clientFilesDirectory, filename);
+        string fullPath = Path.Combine(baseDirectory, filename);
         string content = parts.Length > 2 ? parts[2] : null;
 
         switch (action)
         {
+            case "INFO":
+                SendHelpMessage(clientSocket);
+                break;
+            case "LIST":
+                ListFilesInDirectory(clientSocket);
+                break;
             case "READ":
                 SendFileContent(clientSocket, fullPath);
                 break;
@@ -142,6 +167,7 @@ class Server
                     SendMessage(clientSocket, $"File {filename} does not exist.");
                 }
                 break;
+            
             case "EXIT":
                 SendMessage(clientSocket, "Goodbye!");
                 clientSocket.Close();
@@ -150,6 +176,41 @@ class Server
                 SendMessage(clientSocket, "Unknown command.");
                 break;
         }
+    }
+
+    private static void ListFilesInDirectory(Socket clientSocket)
+    {
+        try
+        {
+            if (Directory.Exists(baseDirectory))
+            {
+                string[] files = Directory.GetFiles(baseDirectory);
+                StringBuilder sb = new StringBuilder("Files in the server:\n");
+                SendMessage(clientSocket, sb.ToString());
+            }
+            else
+            {
+                SendMessage(clientSocket, "Directory does not exist.");
+            }
+        }
+        catch (Exception ex)
+        {
+            SendMessage(clientSocket, $"Error listing directory contents: {ex.Message}");
+        }
+    }
+
+
+    private static void SendHelpMessage(Socket clientSocket)
+    {
+        string helpMessage = "Available Commands:\n" +
+                             "LIST - List all files and directories in the server's Files folder\n" +
+                             "HELP - Show this help message\n" +
+                             "CREATE <filename> - Create a new file\n" +
+                             "READ <filename> - Read the contents of a file\n" +
+                             "WRITE <filename> <content> - Write content to a file\n" +
+                             "DELETE <filename> - Delete a file\n" +
+                             "EXIT - Disconnect from the server";
+        SendMessage(clientSocket, helpMessage);
     }
 
     private static void SendFileContent(Socket clientSocket, string filename)
@@ -183,20 +244,20 @@ class Server
         var clientEndPoint = client.RemoteEndPoint.ToString();
         string logEntry = $"[{DateTime.Now}] - {clientEndPoint} - Client connected - {accessType}";
         Console.WriteLine(logEntry);
-        File.AppendAllText(Path.Combine(logsDirectory, "server_log.txt"), logEntry + Environment.NewLine);
+        File.AppendAllText(Path.Combine(baseDirectory, "server_log.txt"), logEntry + Environment.NewLine);
     }
 
     private static void LogRequest(string clientIP, string permission, string request)
     {
         string logEntry = $"[{DateTime.Now}] {clientIP} ({permission}) requested: {request}";
         Console.WriteLine(logEntry);
-        File.AppendAllText(Path.Combine(logsDirectory, "server_log.txt"), logEntry + Environment.NewLine);
+        File.AppendAllText(Path.Combine(baseDirectory, "server_log.txt"), logEntry + Environment.NewLine);
     }
 
     private static void LogMessageForMonitoring(string clientIP, string message)
     {
         string logEntry = $"[{DateTime.Now}] {clientIP}: {message}";
-        File.AppendAllText(Path.Combine(logsDirectory, "client_messages_log.txt"), logEntry + Environment.NewLine);
+        File.AppendAllText(Path.Combine(baseDirectory, "client_messages_log.txt"), logEntry + Environment.NewLine);
     }
 
     private static string GetLocalIPAddress()

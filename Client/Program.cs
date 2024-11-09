@@ -36,7 +36,7 @@ class Client
         {
             if (!isReadOnly)
             {
-                Console.WriteLine("Enter command (CREATE [filename], WRITE [filename] [content], READ [filename], DELETE [filename], EXIT):");
+                Console.WriteLine("Enter a command (type INFO for a list of commands):");
             }
             else
             {
