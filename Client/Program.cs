@@ -65,6 +65,30 @@ class Client
     }
 
     // Metodat ...
+    private static void ConnectToServer(string serverIP, int port)
+    {
+        try
+        {
+            clientSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+            clientSocket.Connect(IPAddress.Parse(serverIP), port);
+            Console.WriteLine("Connected to server.");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("Unable to connect to server: " + ex.Message);
+        }
+    }
 
+    private static void SendMessage(string message)
+    {
+        byte[] buffer = Encoding.UTF8.GetBytes(message);
+        clientSocket.Send(buffer);
+    }
 
+    private static string ReceiveMessage()
+    {
+        byte[] buffer = new byte[1024];
+        int received = clientSocket.Receive(buffer);
+        return Encoding.UTF8.GetString(buffer, 0, received);
+    }
 }
