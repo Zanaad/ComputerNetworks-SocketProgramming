@@ -24,7 +24,7 @@ class Client
         if (accessResponse.Contains("Read-Only"))
         {
             isReadOnly = true;
-            Console.WriteLine("You have been granted read-only access. Use 'READ [filename]' to read from a file or 'EXIT' to disconnect.");
+            Console.WriteLine("You have been granted read-only access. Use 'READ [filename]', 'LIST' to view files, or 'EXIT' to disconnect.");
         }
         else
         {
@@ -40,15 +40,18 @@ class Client
             }
             else
             {
-                Console.WriteLine("Enter command (READ [filename], EXIT):");
+                Console.WriteLine("Enter command (READ [filename], LIST, EXIT):");
             }
 
             string command = Console.ReadLine();
 
             // Check command validity based on access level
-            if (isReadOnly && !command.StartsWith("READ", StringComparison.OrdinalIgnoreCase) && !command.Equals("EXIT", StringComparison.OrdinalIgnoreCase))
+            if (isReadOnly &&
+                !command.StartsWith("READ", StringComparison.OrdinalIgnoreCase) &&
+                !command.Equals("LIST", StringComparison.OrdinalIgnoreCase) &&
+                !command.Equals("EXIT", StringComparison.OrdinalIgnoreCase))
             {
-                Console.WriteLine("You have read-only access. Only 'READ [filename]' and 'EXIT' commands are allowed.");
+                Console.WriteLine("You have read-only access. Only 'READ [filename]', 'LIST', and 'EXIT' commands are allowed.");
                 continue;
             }
 
@@ -64,7 +67,6 @@ class Client
         clientSocket.Close();
     }
 
-    // Metodat ...
     private static void ConnectToServer(string serverIP, int port)
     {
         try

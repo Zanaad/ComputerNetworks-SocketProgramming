@@ -14,31 +14,13 @@ class Server
     private static string fullAccessClient = null;
     private static object lockObj = new object();
 
-    private static readonly string baseDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"..\..\Files");
+    private static readonly string baseDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"..\..\..\..\Files");
 
     static void Main(string[] args)
     {
         Console.WriteLine("Starting server...");
         Directory.CreateDirectory(baseDirectory);
         StartServer();
-    }
-    private static void StartServer()
-    {
-        string localIP = GetLocalIPAddress();
-        Console.WriteLine("Server IP Address: " + localIP);
-
-        listener = new Socket (AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-        listener.Bind(new IPEndPoint(GetLocalIPAddress.Parse(localIP), port));
-
-         listener.Listen(10);
-
-         Console.WriteLine("Server listening on port" + port);
-          while (true){
-            clientSockets clientSocket = listener.Accept();
-            clientSockets.Add(clientSocket);
-            Thread clientThread = new Thread(() => HandleClient(clientSocket));
-            clientThread.Start();
-          }
     }
     private static void StartServer()
     {
@@ -111,10 +93,15 @@ class Server
                 else if (clientPermission == "Read-Only")
                 {
                     string[] parts = receivedText.Split(' ');
-                    if (parts[0].Equals("READ", StringComparison.OrdinalIgnoreCase))
+                    if (parts[0].Equals("LIST", StringComparison.OrdinalIgnoreCase))
+                    {
+                        ListFilesForReadOnlyClient(clientSocket);
+                    }
+                    else if (parts[0].Equals("READ", StringComparison.OrdinalIgnoreCase))
                     {
                         string filename = parts.Length > 1 ? parts[1] : "server_log.txt";
-                        SendFileContent(clientSocket, filename);
+                        string fullpath = Path.Combine(baseDirectory, filename);
+                        SendFileContent(clientSocket, fullpath);
                     }
                     else if (receivedText.ToUpper() == "EXIT")
                     {
@@ -185,7 +172,7 @@ class Server
                     SendMessage(clientSocket, $"File {filename} does not exist.");
                 }
                 break;
-            
+
             case "EXIT":
                 SendMessage(clientSocket, "Goodbye!");
                 clientSocket.Close();
@@ -196,33 +183,18 @@ class Server
         }
     }
 
-    private static void ListFilesInDirectory(Socket clientSocket)
-    {
-        try
-        {
-            if (Directory.Exists(baseDirectory))
-            {
-                string[] files = Directory.GetFiles(baseDirectory);
-                StringBuilder sb = new StringBuilder("Files in the server:\n");
-                SendMessage(clientSocket, sb.ToString());
-            }
-            else
-            {
-                SendMessage(clientSocket, "Directory does not exist.");
-            }
-        }
-        catch (Exception ex)
-        {
-            SendMessage(clientSocket, $"Error listing directory contents: {ex.Message}");
-        }
-    }
 
+    private static void SendMessage(Socket clientSocket, string message)
+    {
+        byte[] data = Encoding.UTF8.GetBytes(message);
+        clientSocket.Send(data);
+    }
 
     private static void SendHelpMessage(Socket clientSocket)
     {
         string helpMessage = "Available Commands:\n" +
-                             "LIST - List all files and directories in the server's Files folder\n" +
-                             "HELP - Show this help message\n" +
+                             "LIST - List all files in the Files folder\n" +
+                             "INFO - Display a list of all available commands\n" +
                              "CREATE <filename> - Create a new file\n" +
                              "READ <filename> - Read the contents of a file\n" +
                              "WRITE <filename> <content> - Write content to a file\n" +
@@ -249,12 +221,6 @@ class Server
         {
             SendMessage(clientSocket, $"File {filename} does not exist.");
         }
-    }
-
-    private static void SendMessage(Socket clientSocket, string message)
-    {
-        byte[] data = Encoding.UTF8.GetBytes(message);
-        clientSocket.Send(data);
     }
 
     private static void LogConnection(Socket client, string accessType)
@@ -290,4 +256,64 @@ class Server
         }
         throw new Exception("No network adapters with an IPv4 address in the system!");
     }
+
+    private static void ListFilesInDirectory(Socket clientSocket)
+    {
+        try
+        {
+            if (Directory.Exists(baseDirectory))
+            {
+                string[] files = Directory.GetFiles(baseDirectory);
+                StringBuilder sb = new StringBuilder("Files in the server:\n");
+
+                foreach (string file in files)
+                {
+                    sb.AppendLine(Path.GetFileName(file));
+                }
+
+                SendMessage(clientSocket, sb.ToString());
+            }
+            else
+            {
+                SendMessage(clientSocket, "Directory does not exist.");
+            }
+        }
+        catch (Exception ex)
+        {
+            SendMessage(clientSocket, $"Error listing directory contents: {ex.Message}");
+        }
+    }
+
+    private static void ListFilesForReadOnlyClient(Socket clientSocket)
+    {
+        try
+        {
+            if (Directory.Exists(baseDirectory))
+            {
+                string[] files = Directory.GetFiles(baseDirectory);
+                StringBuilder sb = new StringBuilder("Files available on the server:\n");
+
+                foreach (string file in files)
+                {
+                    string fileName = Path.GetFileName(file);
+                    if (fileName != "server_log.txt" && fileName != "client_messages_log.txt")
+                    {
+                        sb.AppendLine(fileName);
+                    }
+                }
+
+                SendMessage(clientSocket, sb.ToString());
+            }
+            else
+            {
+                SendMessage(clientSocket, "Directory does not exist.");
+            }
+        }
+        catch (Exception ex)
+        {
+            SendMessage(clientSocket, $"Error listing directory contents: {ex.Message}");
+        }
+    }
+
+
 }

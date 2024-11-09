@@ -1,14 +1,14 @@
-[11/8/2024 7:57:28 PM] - 192.168.0.28:61138 - Client connected - Full-access granted
-[11/8/2024 7:57:38 PM] 192.168.0.28 (Full) requested: READ server_log.txt
-[11/8/2024 7:57:50 PM] 192.168.0.28 (Full) requested: CREATE test.txt
-[11/8/2024 7:58:04 PM] 192.168.0.28 (Full) requested: WRITE test.txt Hello World
-[11/8/2024 7:58:12 PM] 192.168.0.28 (Full) requested: DELETE test.txt
-[11/8/2024 7:58:24 PM] - 192.168.0.28:61151 - Client connected - Read-only access granted
-[11/8/2024 7:58:36 PM] 192.168.0.28 (Read-Only) requested: READ server_log.txt
-[11/8/2024 7:59:42 PM] 192.168.0.28 (Read-Only) requested: READ client_messages_log.txt
-[11/8/2024 7:59:47 PM] 192.168.0.28 (Read-Only) requested: READ server_log.txt
-[11/8/2024 8:02:20 PM] - 192.168.0.28:61370 - Client connected - Full-access granted
-[11/8/2024 8:02:54 PM] - 192.168.0.28:61404 - Client connected - Read-only access granted
-[11/8/2024 8:03:01 PM] 192.168.0.28 (Read-Only) requested: READ server_log.txt
-[11/8/2024 8:03:07 PM] 192.168.0.28 (Read-Only) requested: READ zana.txt
-[11/8/2024 8:03:50 PM] 192.168.0.28 (Full) requested: READ server_log.txt
+[11/9/2024 4:09:38 PM] - 192.168.0.28:57313 - Client connected - Full-access granted
+[11/9/2024 4:09:41 PM] 192.168.0.28 (Full) requested: LIST
+[11/9/2024 4:09:47 PM] 192.168.0.28 (Full) requested: INFO
+[11/9/2024 4:09:55 PM] 192.168.0.28 (Full) requested: CREATE ZANA.TXT
+[11/9/2024 4:10:27 PM] 192.168.0.28 (Full) requested: WRITE ZANA.TXT HELLO
+[11/9/2024 4:10:40 PM] 192.168.0.28 (Full) requested: DELETE ZANA.TXT
+[11/9/2024 4:11:04 PM] - 192.168.0.28:57333 - Client connected - Read-only access granted
+[11/9/2024 4:11:08 PM] 192.168.0.28 (Read-Only) requested: LIST
+[11/9/2024 4:12:16 PM] - 192.168.0.28:57360 - Client connected - Full-access granted
+[11/9/2024 4:12:23 PM] - 192.168.0.28:57361 - Client connected - Read-only access granted
+[11/9/2024 4:12:29 PM] 192.168.0.28 (Read-Only) requested: LIST
+[11/9/2024 4:12:36 PM] 192.168.0.28 (Read-Only) requested: READ server_log.txt
+[11/9/2024 4:12:52 PM] 192.168.0.28 (Read-Only) requested: LIST
+[11/9/2024 4:13:00 PM] 192.168.0.28 (Read-Only) requested: EXIT
