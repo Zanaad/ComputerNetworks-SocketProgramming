@@ -95,6 +95,6 @@ EXIT
 - Only the first client gets full access not the others.
 
 ## Credits
-### Zana Ademi, Zana Berisha, Yllka Berisha, Urtim Shehi.
+### Zana Ademi, Zana Shabani, Yllkë Berisha, Urtim Shehi.
 
 ## Have FUN.
