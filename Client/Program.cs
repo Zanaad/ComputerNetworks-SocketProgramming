@@ -2,101 +2,106 @@
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using System.Threading;
 
 class Client
 {
     private static Socket clientSocket;
-    private static bool isReadOnly = false; // Track if client has read-only access
-    private static string serverIP = "192.168.0.109";
-    private static int port = 5000;
+    private static bool isReadOnly = false; 
+    private static string serverIP;
+    private static int port;
+    private const int reconnectDelay = 5000; // Delay in milliseconds before reconnecting
+
     static void Main(string[] args)
     {
-        while (true)  // Loop for reconnection attempts
-        {
-            try
-            {
-                ConnectToServer(serverIP, port);
-                break;  // Exit loop if connection is successful
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine("Error connecting to the server: " + ex.Message);
-                Console.WriteLine("Retrying in 5 seconds...");
-                Thread.Sleep(5000);  // Wait for 5 seconds before retrying
-            }
-        }
+        Console.Write("Enter Server IP: ");
+        serverIP = Console.ReadLine();
 
-        // Check access level based on the server's initial response
-        string accessResponse = ReceiveMessage();
+        Console.Write("Enter Server Port: ");
+        port = int.Parse(Console.ReadLine());
 
-        if (accessResponse.Contains("Read-Only"))
-        {
-            isReadOnly = true;
-            Console.WriteLine("You have been granted read-only access. Use 'READ [filename]', 'LIST' to view files, or 'EXIT' to disconnect.");
-        }
-        else
-        {
-            Console.WriteLine("You have full access.");
-        }
+        ConnectAndInitialize();
 
         // Main command loop
         while (true)
         {
-            if (!isReadOnly)
-            {
-                Console.WriteLine("Enter a command (type INFO for a list of commands):");
-            }
-            else
-            {
-                Console.WriteLine("Enter command (READ [filename], LIST, EXIT):");
-            }
-
-            string command = Console.ReadLine();
-
-            // Check command validity based on access level
-            if (isReadOnly &&
-                !command.StartsWith("READ", StringComparison.OrdinalIgnoreCase) &&
-                !command.Equals("LIST", StringComparison.OrdinalIgnoreCase) &&
-                !command.Equals("EXIT", StringComparison.OrdinalIgnoreCase))
-            {
-                Console.WriteLine("You have read-only access. Only 'READ [filename]', 'LIST', and 'EXIT' commands are allowed.");
-                continue;
-            }
-
             try
             {
+                if (!isReadOnly)
+                {
+                    Console.WriteLine("Enter a command (type INFO for a list of commands):");
+                }
+                else
+                {
+                    Console.WriteLine("Enter command (READ [filename], LIST, EXIT):");
+                }
+
+                string command = Console.ReadLine();
+
+                // Check command validity based on access level
+                if (isReadOnly &&
+                    !command.StartsWith("READ", StringComparison.OrdinalIgnoreCase) &&
+                    !command.Equals("LIST", StringComparison.OrdinalIgnoreCase) &&
+                    !command.Equals("EXIT", StringComparison.OrdinalIgnoreCase))
+                {
+                    Console.WriteLine("You have read-only access. Only 'READ [filename]', 'LIST', and 'EXIT' commands are allowed.");
+                    continue;
+                }
+
                 SendMessage(command);
+
+                if (command.ToUpper().StartsWith("EXIT")) break;
+
+                string response = ReceiveMessage();
+                Console.WriteLine("Server response: " + response);
             }
-            catch (SocketException ex)
+            catch (SocketException)
             {
-                Console.WriteLine("Connection lost. Reconnecting...");
-                clientSocket.Close();
-                ConnectToServer(serverIP, port);  // Attempt to reconnect
-               // SendMessage(command);  // Retry sending the message after reconnection
+                Console.WriteLine("Connection lost. Attempting to reconnect...");
+                ConnectAndInitialize();
             }
-
-            if (command.ToUpper().StartsWith("EXIT")) break;
-
-            string response = ReceiveMessage();
-            Console.WriteLine("Server response: " + response);
         }
 
         clientSocket.Shutdown(SocketShutdown.Both);
         clientSocket.Close();
     }
 
-    private static void ConnectToServer(string serverIP, int port)
+    private static void ConnectAndInitialize()
     {
-        try
+        while (true)
         {
-            clientSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-            clientSocket.Connect(IPAddress.Parse(serverIP), port);
-            Console.WriteLine("Connected to server.");
+            try
+            {
+                ConnectToServer();
+
+                // Check access level based on the server's initial response
+                string accessResponse = ReceiveMessage();
+
+                if (accessResponse.Contains("Read-Only"))
+                {
+                    isReadOnly = true;
+                    Console.WriteLine("You have been granted read-only access. Use 'READ [filename]', 'LIST' to view files, or 'EXIT' to disconnect.");
+                }
+                else
+                {
+                    isReadOnly = false;
+                    Console.WriteLine("You have full access.");
+                }
+                break; // Exit the loop if connection is successful
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Unable to connect to server: {ex.Message}. Retrying in {reconnectDelay / 1000} seconds...");
+                Thread.Sleep(reconnectDelay); // Wait before retrying
+            }
         }
-        catch (Exception ex)
-        {
-            Console.WriteLine("Unable to connect to server: " + ex.Message);
-        }
+    }
+
+    private static void ConnectToServer()
+    {
+        clientSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+        clientSocket.Connect(IPAddress.Parse(serverIP), port);
+        Console.WriteLine("Connected to server.");
     }
 
     private static void SendMessage(string message)

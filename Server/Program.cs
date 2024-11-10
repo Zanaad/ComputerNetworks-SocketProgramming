@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
@@ -10,17 +11,16 @@ class Server
 {
     private static Socket listener;
     private static List<Socket> clientSockets = new List<Socket>();
+    private static ConcurrentDictionary<string, Timer> clientTimers = new ConcurrentDictionary<string, Timer>();
+    private static ConcurrentDictionary<string, string> clientPermissions = new ConcurrentDictionary<string, string>(); // Store client permissions
     private static int port = 5000;
+    private static int threshold = 2;
+    private static int inactivityTimeout = 10000;
     private static string fullAccessClient = null;
     private static object lockObj = new object();
-    private static int maxConnections = 4; // Set the maximum number of connections
-    private static Semaphore connectionSemaphore = new Semaphore(maxConnections, maxConnections);
-
 
     private static readonly string baseDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"..\..\..\..\Files");
-
-    private static Queue<Socket> fullAccessQueue = new Queue<Socket>();
-    private static Queue<Socket> readOnlyQueue = new Queue<Socket>();
+    private static ConcurrentQueue<Socket> waitingClients = new ConcurrentQueue<Socket>();
 
     static void Main(string[] args)
     {
@@ -28,6 +28,7 @@ class Server
         Directory.CreateDirectory(baseDirectory);
         StartServer();
     }
+
     private static void StartServer()
     {
         string localIP = GetLocalIPAddress();
@@ -35,92 +36,72 @@ class Server
 
         listener = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
         listener.Bind(new IPEndPoint(IPAddress.Parse(localIP), port));
-        listener.Listen(maxConnections);
+        listener.Listen(10);
 
-        Console.WriteLine($"Server listening on port {port}. Max connections: {maxConnections}");
+        Console.WriteLine("Server listening on port " + port);
 
         while (true)
         {
-            if (!connectionSemaphore.WaitOne(0)) // Instant check without blocking
-            {
-                Console.WriteLine("Max connections reached, new connections are being put on hold.");
-                connectionSemaphore.WaitOne(); // Block until a slot is available
-            }
-
-            // Accept new client connection
             Socket clientSocket = listener.Accept();
-            clientSockets.Add(clientSocket);
+            string clientKey = ((IPEndPoint)clientSocket.RemoteEndPoint).ToString(); // Unique client key
 
-            Thread clientThread = new Thread(() =>
+            lock (lockObj)
             {
-                try
+                if (clientSockets.Count >= threshold)
                 {
-                    HandleClient(clientSocket);
+                    Console.WriteLine("Connection threshold reached. Putting client on hold.");
+                    waitingClients.Enqueue(clientSocket);
                 }
-                finally
+                else
                 {
-                    // Release the spot when done
-                    connectionSemaphore.Release();
+                    AddClient(clientSocket, clientKey);
                 }
-            });
-            clientThread.Start();
+            }
         }
     }
-    private static void HandleClient(Socket clientSocket)
-    {
-        IPEndPoint remoteIpEndPoint = clientSocket.RemoteEndPoint as IPEndPoint;
-        string clientIP = remoteIpEndPoint.Address.ToString();
 
+    private static void AddClient(Socket clientSocket, string clientKey)
+    {
+        clientSockets.Add(clientSocket);
+        Thread clientThread = new Thread(() => HandleClient(clientSocket, clientKey));
+        clientThread.Start();
+
+        StartClientTimer(clientKey, clientSocket);
+    }
+
+    private static void HandleClient(Socket clientSocket, string clientKey)
+    {
+        string clientIP = clientKey.Split(':')[0];
         string clientPermission;
+
+        // Check if the client is reconnecting and restore permissions
         lock (lockObj)
         {
-            if (fullAccessClient == null)
+            if (clientPermissions.ContainsKey(clientKey))
             {
-                fullAccessClient = clientIP;
-                clientPermission = "Full";
-                LogConnection(clientSocket, "Full-access granted");
-                SendMessage(clientSocket, $"You have been granted {clientPermission} access.");
-            }
-            else if ( fullAccessClient != clientIP ) 
-            {
-                clientPermission = "Read-Only";
-                LogConnection(clientSocket, "Read-only access granted");
-                SendMessage(clientSocket, $"You have been granted {clientPermission} access.");
+                clientPermission = clientPermissions[clientKey];
+                Console.WriteLine($"Client {clientIP} reconnected with {clientPermission} access.");
             }
             else
             {
-                clientPermission = "Full";
-                LogConnection(clientSocket, "Full-access granted");
+                // Assign permissions for new clients
+                if (fullAccessClient == null)
+                {
+                    fullAccessClient = clientKey;
+                    clientPermission = "Full";
+                    clientPermissions[clientKey] = "Full";
+                    Console.WriteLine($"Client {clientIP} granted full access.");
+                }
+                else
+                {
+                    clientPermission = "Read-Only";
+                    clientPermissions[clientKey] = "Read-Only";
+                    Console.WriteLine($"Client {clientIP} granted read-only access.");
+                }
             }
         }
 
-       
-
-        // Add to the appropriate queue based on client permission
-        if (clientPermission == "Full")
-        {
-            lock (fullAccessQueue)
-            {
-                fullAccessQueue.Enqueue(clientSocket);
-            }
-        }
-        else
-        {
-            lock (readOnlyQueue)
-            {
-                readOnlyQueue.Enqueue(clientSocket);
-            }
-        }
-
-        // Handle requests based on priority (Full-access first)
-        ProcessClientRequests();
-
-        // Inactivity timeout logic
-        Timer inactivityTimer = new Timer(state =>
-        {
-            Console.WriteLine($"No message received from {clientIP} within the allowed time. Closing connection.");
-            clientSocket.Close(); // Close the connection
-        }, null, TimeSpan.FromMinutes(5), Timeout.InfiniteTimeSpan); // Set timeout to 1 minute
+        SendMessage(clientSocket, $"You have been granted {clientPermission} access.");
 
         try
         {
@@ -130,14 +111,11 @@ class Server
                 int receivedBytes = clientSocket.Receive(buffer);
                 if (receivedBytes == 0) break;
 
-                // Reset inactivity timer when a message is received
-                inactivityTimer.Change(TimeSpan.FromMinutes(5), Timeout.InfiniteTimeSpan); // Reset the timer
+                // Reset the inactivity timer on activity
+                ResetClientTimer(clientKey);
 
                 string receivedText = Encoding.UTF8.GetString(buffer, 0, receivedBytes);
                 Console.WriteLine($"Received from {clientIP} ({clientPermission}): {receivedText}");
-
-                LogRequest(clientIP, clientPermission, receivedText);
-                LogMessageForMonitoring(clientIP, receivedText);
 
                 if (clientPermission == "Full")
                 {
@@ -150,26 +128,7 @@ class Server
                 }
                 else if (clientPermission == "Read-Only")
                 {
-                    string[] parts = receivedText.Split(' ');
-                    if (parts[0].Equals("LIST", StringComparison.OrdinalIgnoreCase))
-                    {
-                        ListFilesForReadOnlyClient(clientSocket);
-                    }
-                    else if (parts[0].Equals("READ", StringComparison.OrdinalIgnoreCase))
-                    {
-                        string filename = parts.Length > 1 ? parts[1] : "server_log.txt";
-                        string fullpath = Path.Combine(baseDirectory, filename);
-                        SendFileContent(clientSocket, fullpath);
-                    }
-                    else if (receivedText.ToUpper() == "EXIT")
-                    {
-                        SendMessage(clientSocket, "Goodbye!");
-                        break;
-                    }
-                    else
-                    {
-                        SendMessage(clientSocket, "You have read-only access.");
-                    }
+                    HandleReadOnlyCommands(clientSocket, receivedText);
                 }
             }
         }
@@ -179,31 +138,51 @@ class Server
         }
         finally
         {
+            CloseClient(clientSocket, clientKey);
+        }
+    }
+
+    private static void StartClientTimer(string clientKey, Socket clientSocket)
+    {
+        Timer timer = new Timer((state) =>
+        {
+            Console.WriteLine($"Client {clientKey} timed out due to inactivity.");
+            CloseClient(clientSocket, clientKey);
+        }, null, inactivityTimeout, Timeout.Infinite);
+
+        clientTimers[clientKey] = timer;
+    }
+
+    private static void ResetClientTimer(string clientKey)
+    {
+        if (clientTimers.TryGetValue(clientKey, out Timer timer))
+        {
+            timer.Change(inactivityTimeout, Timeout.Infinite);
+        }
+    }
+
+    private static void CloseClient(Socket clientSocket, string clientKey)
+    {
+        lock (lockObj)
+        {
             clientSocket.Close();
             clientSockets.Remove(clientSocket);
-            Console.WriteLine($"Connection with {clientIP} closed.");
+            clientTimers.TryRemove(clientKey, out _);
+            Console.WriteLine($"Connection with {clientKey} closed.");
+
+            if (clientKey == fullAccessClient)
+                fullAccessClient = null;
+
+            // Clear permission if the client fully disconnects
+            clientPermissions.TryRemove(clientKey, out _);
+
+            if (waitingClients.TryDequeue(out Socket waitingClient))
+            {
+                string waitingClientKey = ((IPEndPoint)waitingClient.RemoteEndPoint).ToString();
+                AddClient(waitingClient, waitingClientKey);
+            }
         }
     }
-
-    private static void ProcessClientRequests()
-    {
-        while (fullAccessQueue.Count > 0)
-        {
-            Socket clientSocket = fullAccessQueue.Dequeue();
-            Console.WriteLine("Processing full-access request from client.");
-
-        }
-
-        while (readOnlyQueue.Count > 0)
-        {
-            Socket clientSocket = readOnlyQueue.Dequeue();
-            Console.WriteLine("Processing read-only request from client.");
-        }
-    }
-
-  
- 
-
     private static void HandleFullAccessCommands(Socket clientSocket, string command)
     {
         string[] parts = command.Split(' ', 3);
@@ -260,7 +239,28 @@ class Server
         }
     }
 
-
+    private static void HandleReadOnlyCommands(Socket clientSocket, string receivedText)
+    {
+        string[] parts = receivedText.Split(' ');
+        if (parts[0].Equals("LIST", StringComparison.OrdinalIgnoreCase))
+        {
+            ListFilesForReadOnlyClient(clientSocket);
+        }
+        else if (parts[0].Equals("READ", StringComparison.OrdinalIgnoreCase))
+        {
+            string filename = parts.Length > 1 ? parts[1] : "server_log.txt";
+            string fullpath = Path.Combine(baseDirectory, filename);
+            SendFileContent(clientSocket, fullpath);
+        }
+        else if (receivedText.ToUpper() == "EXIT")
+        {
+            SendMessage(clientSocket, "Goodbye!");
+        }
+        else
+        {
+            SendMessage(clientSocket, "You have read-only access.");
+        }
+    }
     private static void SendMessage(Socket clientSocket, string message)
     {
         byte[] data = Encoding.UTF8.GetBytes(message);
@@ -391,6 +391,5 @@ class Server
             SendMessage(clientSocket, $"Error listing directory contents: {ex.Message}");
         }
     }
-
 
 }
