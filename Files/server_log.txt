@@ -7,3 +7,6 @@
 [11/10/2024 9:40:47 PM] 192.168.0.28 (Full) requested: read
 [11/10/2024 9:40:52 PM] 192.168.0.28 (Full) requested: list
 [11/10/2024 9:40:55 PM] 192.168.0.28 (Full) requested: info
+[10/11/2024 10:16:31 PM] - 192.168.0.109:59874 - Client connected - Full-access granted
+[10/11/2024 10:16:37 PM] 192.168.0.109 (Full) requested: info
+[10/11/2024 10:16:40 PM] 192.168.0.109 (Full) requested: list

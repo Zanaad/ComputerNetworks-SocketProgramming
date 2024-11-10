@@ -14,13 +14,16 @@ class Server
     private static ConcurrentDictionary<string, Timer> clientTimers = new ConcurrentDictionary<string, Timer>();
     private static ConcurrentDictionary<string, string> clientPermissions = new ConcurrentDictionary<string, string>();
     private static int port = 5000;
-    private static int threshold = 2;
-    private static int inactivityTimeout = 60000;
+    private static int threshold = 4;
+    private static int inactivityTimeout = 300000;
     private static string fullAccessClient = null;
     private static object lockObj = new object();
 
     private static readonly string baseDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"..\..\..\..\Files");
     private static ConcurrentQueue<Socket> waitingClients = new ConcurrentQueue<Socket>();
+
+    private static Queue<Socket> fullAccessQueue = new Queue<Socket>();
+    private static Queue<Socket> readOnlyQueue = new Queue<Socket>();
 
     static void Main(string[] args)
     {
@@ -102,6 +105,24 @@ class Server
 
         SendMessage(clientSocket, $"You have been granted {clientPermission} access.");
 
+        // Add to the appropriate queue based on client permission
+        if (clientPermission == "Full")
+        {
+            lock (fullAccessQueue)
+            {
+                fullAccessQueue.Enqueue(clientSocket);
+            }
+        }
+        else
+        {
+            lock (readOnlyQueue)
+            {
+                readOnlyQueue.Enqueue(clientSocket);
+            }
+        }
+        // Handle requests based on priority (Full-access first)
+        ProcessClientRequests();
+
         try
         {
             while (true)
@@ -145,6 +166,19 @@ class Server
         finally
         {
             CloseClient(clientSocket, clientKey);
+        }
+    }
+    private static void ProcessClientRequests()
+    {
+        while (fullAccessQueue.Count > 0)
+        {
+            Socket clientSocket = fullAccessQueue.Dequeue();
+            Console.WriteLine("Processing full-access request from client.");
+        }
+        while (readOnlyQueue.Count > 0)
+        {
+            Socket clientSocket = readOnlyQueue.Dequeue();
+            Console.WriteLine("Processing read-only request from client.");
         }
     }
 
