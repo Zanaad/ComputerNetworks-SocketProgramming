@@ -11,13 +11,20 @@ class Client
     private static int port = 5000;
     static void Main(string[] args)
     {
-        //Console.Write("Enter Server IP: ");
-        //string serverIP = Console.ReadLine();
-
-        //Console.Write("Enter Server Port: ");
-        //int port = int.Parse(Console.ReadLine());
-
-        ConnectToServer(serverIP, port);
+        while (true)  // Loop for reconnection attempts
+        {
+            try
+            {
+                ConnectToServer(serverIP, port);
+                break;  // Exit loop if connection is successful
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error connecting to the server: " + ex.Message);
+                Console.WriteLine("Retrying in 5 seconds...");
+                Thread.Sleep(5000);  // Wait for 5 seconds before retrying
+            }
+        }
 
         // Check access level based on the server's initial response
         string accessResponse = ReceiveMessage();
@@ -56,7 +63,17 @@ class Client
                 continue;
             }
 
-            SendMessage(command);
+            try
+            {
+                SendMessage(command);
+            }
+            catch (SocketException ex)
+            {
+                Console.WriteLine("Connection lost. Reconnecting...");
+                clientSocket.Close();
+                ConnectToServer(serverIP, port);  // Attempt to reconnect
+                SendMessage(command);  // Retry sending the message after reconnection
+            }
 
             if (command.ToUpper().StartsWith("EXIT")) break;
 

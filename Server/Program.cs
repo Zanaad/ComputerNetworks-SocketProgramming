@@ -13,7 +13,7 @@ class Server
     private static int port = 5000;
     private static string fullAccessClient = null;
     private static object lockObj = new object();
-    private static int maxConnections = 2; // Set the maximum number of connections
+    private static int maxConnections = 4; // Set the maximum number of connections
     private static Semaphore connectionSemaphore = new Semaphore(maxConnections, maxConnections);
 
 
@@ -86,6 +86,13 @@ class Server
 
         SendMessage(clientSocket, $"You have been granted {clientPermission} access.");
 
+        // Inactivity timeout logic
+        Timer inactivityTimer = new Timer(state =>
+        {
+            Console.WriteLine($"No message received from {clientIP} within the allowed time. Closing connection.");
+            clientSocket.Close(); // Close the connection
+        }, null, TimeSpan.FromMinutes(1), Timeout.InfiniteTimeSpan); // Set timeout to 1 minute
+
         try
         {
             while (true)
@@ -93,6 +100,9 @@ class Server
                 byte[] buffer = new byte[1024];
                 int receivedBytes = clientSocket.Receive(buffer);
                 if (receivedBytes == 0) break;
+
+                // Reset inactivity timer when a message is received
+                inactivityTimer.Change(TimeSpan.FromMinutes(5), Timeout.InfiniteTimeSpan); // Reset the timer
 
                 string receivedText = Encoding.UTF8.GetString(buffer, 0, receivedBytes);
                 Console.WriteLine($"Received from {clientIP} ({clientPermission}): {receivedText}");
@@ -145,6 +155,7 @@ class Server
             Console.WriteLine($"Connection with {clientIP} closed.");
         }
     }
+
 
     private static void HandleFullAccessCommands(Socket clientSocket, string command)
     {
