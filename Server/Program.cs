@@ -79,15 +79,22 @@ class Server
                 fullAccessClient = clientIP;
                 clientPermission = "Full";
                 LogConnection(clientSocket, "Full-access granted");
+                SendMessage(clientSocket, $"You have been granted {clientPermission} access.");
             }
-            else
+            else if ( fullAccessClient != clientIP ) 
             {
                 clientPermission = "Read-Only";
                 LogConnection(clientSocket, "Read-only access granted");
+                SendMessage(clientSocket, $"You have been granted {clientPermission} access.");
+            }
+            else
+            {
+                clientPermission = "Full";
+                LogConnection(clientSocket, "Full-access granted");
             }
         }
 
-        SendMessage(clientSocket, $"You have been granted {clientPermission} access.");
+       
 
         // Add to the appropriate queue based on client permission
         if (clientPermission == "Full")
@@ -113,7 +120,7 @@ class Server
         {
             Console.WriteLine($"No message received from {clientIP} within the allowed time. Closing connection.");
             clientSocket.Close(); // Close the connection
-        }, null, TimeSpan.FromMinutes(1), Timeout.InfiniteTimeSpan); // Set timeout to 1 minute
+        }, null, TimeSpan.FromMinutes(5), Timeout.InfiniteTimeSpan); // Set timeout to 1 minute
 
         try
         {

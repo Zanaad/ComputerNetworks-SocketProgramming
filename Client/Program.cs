@@ -72,7 +72,7 @@ class Client
                 Console.WriteLine("Connection lost. Reconnecting...");
                 clientSocket.Close();
                 ConnectToServer(serverIP, port);  // Attempt to reconnect
-                SendMessage(command);  // Retry sending the message after reconnection
+               // SendMessage(command);  // Retry sending the message after reconnection
             }
 
             if (command.ToUpper().StartsWith("EXIT")) break;
