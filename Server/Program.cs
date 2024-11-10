@@ -19,6 +19,9 @@ class Server
 
     private static readonly string baseDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"..\..\..\..\Files");
 
+    private static Queue<Socket> fullAccessQueue = new Queue<Socket>();
+    private static Queue<Socket> readOnlyQueue = new Queue<Socket>();
+
     static void Main(string[] args)
     {
         Console.WriteLine("Starting server...");
@@ -85,6 +88,25 @@ class Server
         }
 
         SendMessage(clientSocket, $"You have been granted {clientPermission} access.");
+
+        // Add to the appropriate queue based on client permission
+        if (clientPermission == "Full")
+        {
+            lock (fullAccessQueue)
+            {
+                fullAccessQueue.Enqueue(clientSocket);
+            }
+        }
+        else
+        {
+            lock (readOnlyQueue)
+            {
+                readOnlyQueue.Enqueue(clientSocket);
+            }
+        }
+
+        // Handle requests based on priority (Full-access first)
+        ProcessClientRequests();
 
         // Inactivity timeout logic
         Timer inactivityTimer = new Timer(state =>
@@ -156,6 +178,24 @@ class Server
         }
     }
 
+    private static void ProcessClientRequests()
+    {
+        while (fullAccessQueue.Count > 0)
+        {
+            Socket clientSocket = fullAccessQueue.Dequeue();
+            Console.WriteLine("Processing full-access request from client.");
+
+        }
+
+        while (readOnlyQueue.Count > 0)
+        {
+            Socket clientSocket = readOnlyQueue.Dequeue();
+            Console.WriteLine("Processing read-only request from client.");
+        }
+    }
+
+  
+ 
 
     private static void HandleFullAccessCommands(Socket clientSocket, string command)
     {
