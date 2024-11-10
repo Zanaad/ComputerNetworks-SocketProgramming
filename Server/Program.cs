@@ -12,10 +12,10 @@ class Server
     private static Socket listener;
     private static List<Socket> clientSockets = new List<Socket>();
     private static ConcurrentDictionary<string, Timer> clientTimers = new ConcurrentDictionary<string, Timer>();
-    private static ConcurrentDictionary<string, string> clientPermissions = new ConcurrentDictionary<string, string>(); // Store client permissions
+    private static ConcurrentDictionary<string, string> clientPermissions = new ConcurrentDictionary<string, string>();
     private static int port = 5000;
     private static int threshold = 2;
-    private static int inactivityTimeout = 10000;
+    private static int inactivityTimeout = 60000;
     private static string fullAccessClient = null;
     private static object lockObj = new object();
 
@@ -65,7 +65,6 @@ class Server
         clientSockets.Add(clientSocket);
         Thread clientThread = new Thread(() => HandleClient(clientSocket, clientKey));
         clientThread.Start();
-
         StartClientTimer(clientKey, clientSocket);
     }
 
@@ -74,29 +73,29 @@ class Server
         string clientIP = clientKey.Split(':')[0];
         string clientPermission;
 
-        // Check if the client is reconnecting and restore permissions
         lock (lockObj)
         {
-            if (clientPermissions.ContainsKey(clientKey))
+            // Check if the client is reconnecting and restore permissions based on IP
+            if (clientPermissions.ContainsKey(clientIP))
             {
-                clientPermission = clientPermissions[clientKey];
+                clientPermission = clientPermissions[clientIP];
                 Console.WriteLine($"Client {clientIP} reconnected with {clientPermission} access.");
             }
             else
             {
-                // Assign permissions for new clients
+                // Assign permissions for new clients based on IP address
                 if (fullAccessClient == null)
                 {
-                    fullAccessClient = clientKey;
+                    fullAccessClient = clientIP; // The first client to connect gets full access
                     clientPermission = "Full";
-                    clientPermissions[clientKey] = "Full";
-                    Console.WriteLine($"Client {clientIP} granted full access.");
+                    clientPermissions[clientIP] = "Full";
+                    LogConnection(clientSocket, "Full-access granted");
                 }
                 else
                 {
                     clientPermission = "Read-Only";
-                    clientPermissions[clientKey] = "Read-Only";
-                    Console.WriteLine($"Client {clientIP} granted read-only access.");
+                    clientPermissions[clientIP] = "Read-Only";
+                    LogConnection(clientSocket, "Read-only access granted");
                 }
             }
         }
@@ -111,11 +110,13 @@ class Server
                 int receivedBytes = clientSocket.Receive(buffer);
                 if (receivedBytes == 0) break;
 
-                // Reset the inactivity timer on activity
                 ResetClientTimer(clientKey);
 
                 string receivedText = Encoding.UTF8.GetString(buffer, 0, receivedBytes);
                 Console.WriteLine($"Received from {clientIP} ({clientPermission}): {receivedText}");
+
+                LogRequest(clientIP, clientPermission, receivedText);
+                LogMessageForMonitoring(clientIP, receivedText);
 
                 if (clientPermission == "Full")
                 {
@@ -128,6 +129,11 @@ class Server
                 }
                 else if (clientPermission == "Read-Only")
                 {
+                    if (receivedText.ToUpper() == "EXIT")
+                    {
+                        SendMessage(clientSocket, "Goodbye!");
+                        break;
+                    }
                     HandleReadOnlyCommands(clientSocket, receivedText);
                 }
             }
@@ -163,6 +169,8 @@ class Server
 
     private static void CloseClient(Socket clientSocket, string clientKey)
     {
+        string clientIP = clientKey.Split(':')[0]; // Extract IP address from clientKey
+
         lock (lockObj)
         {
             clientSocket.Close();
@@ -170,12 +178,15 @@ class Server
             clientTimers.TryRemove(clientKey, out _);
             Console.WriteLine($"Connection with {clientKey} closed.");
 
-            if (clientKey == fullAccessClient)
-                fullAccessClient = null;
+            if (clientIP == fullAccessClient)
+            {
+                fullAccessClient = null; // Reset full access client IP when they disconnect
+            }
 
             // Clear permission if the client fully disconnects
-            clientPermissions.TryRemove(clientKey, out _);
+            clientPermissions.TryRemove(clientIP, out _);
 
+            // Handle waiting clients if any
             if (waitingClients.TryDequeue(out Socket waitingClient))
             {
                 string waitingClientKey = ((IPEndPoint)waitingClient.RemoteEndPoint).ToString();
@@ -183,11 +194,12 @@ class Server
             }
         }
     }
+
     private static void HandleFullAccessCommands(Socket clientSocket, string command)
     {
         string[] parts = command.Split(' ', 3);
         string action = parts[0].ToUpper();
-        string filename = parts.Length > 1 ? parts[1] : "server_file.txt";
+        string filename = parts.Length > 1 ? parts[1] : "test.txt";
         string fullPath = Path.Combine(baseDirectory, filename);
         string content = parts.Length > 2 ? parts[2] : null;
 
@@ -248,7 +260,7 @@ class Server
         }
         else if (parts[0].Equals("READ", StringComparison.OrdinalIgnoreCase))
         {
-            string filename = parts.Length > 1 ? parts[1] : "server_log.txt";
+            string filename = parts.Length > 1 ? parts[1] : "test.txt";
             string fullpath = Path.Combine(baseDirectory, filename);
             SendFileContent(clientSocket, fullpath);
         }
@@ -270,8 +282,8 @@ class Server
     private static void SendHelpMessage(Socket clientSocket)
     {
         string helpMessage = "Available Commands:\n" +
-                             "LIST - List all files in the Files folder\n" +
                              "INFO - Display a list of all available commands\n" +
+                             "LIST - List all files in the Files folder\n" +
                              "CREATE <filename> - Create a new file\n" +
                              "READ <filename> - Read the contents of a file\n" +
                              "WRITE <filename> <content> - Write content to a file\n" +

@@ -1,64 +1,9 @@
-[11/10/2024 2:26:22 PM] - 192.168.0.28:56431 - Client connected - Full-access granted
-[11/10/2024 2:26:26 PM] 192.168.0.28 (Full) requested: INFO
-[11/10/2024 2:26:28 PM] 192.168.0.28 (Full) requested: LIST
-[11/10/2024 2:26:32 PM] 192.168.0.28 (Full) requested: WRITE
-[11/10/2024 2:26:38 PM] 192.168.0.28 (Full) requested: CREATE
-[11/10/2024 2:26:45 PM] 192.168.0.28 (Full) requested: CREATE test.txt
-[11/10/2024 2:26:50 PM] 192.168.0.28 (Full) requested: READ
-[11/10/2024 2:26:55 PM] 192.168.0.28 (Full) requested: READ test.txt
-[11/10/2024 2:27:05 PM] 192.168.0.28 (Full) requested: DELETE 
-[11/10/2024 2:27:11 PM] 192.168.0.28 (Full) requested: DELETE test.txt
-[11/10/2024 2:27:19 PM] - 192.168.0.28:56443 - Client connected - Full-access granted
-[11/10/2024 2:27:47 PM] - 192.168.0.28:56449 - Client connected - Full-access granted
-[11/10/2024 2:27:50 PM] - 192.168.0.28:56450 - Client connected - Full-access granted
-[11/10/2024 2:28:50 PM] - 192.168.0.28:56473 - Client connected - Full-access granted
-[11/10/2024 2:28:59 PM] - 192.168.0.28:56479 - Client connected - Full-access granted
-[11/10/2024 2:29:46 PM] - 192.168.0.28:56512 - Client connected - Full-access granted
-[11/10/2024 2:29:52 PM] - 192.168.0.28:56513 - Client connected - Full-access granted
-[11/10/2024 2:36:21 PM] - 192.168.0.28:63760 - Client connected - Full-access granted
-[11/10/2024 2:36:24 PM] 192.168.0.28 (Full) requested: INFO
-[11/10/2024 2:37:50 PM] - 192.168.0.28:63787 - Client connected - Full-access granted
-[11/10/2024 2:38:10 PM] - 192.168.0.28:63789 - Client connected - Full-access granted
-[11/10/2024 2:38:11 PM] 192.168.0.28 (Full) requested: info
-[11/10/2024 3:42:59 PM] - 192.168.0.28:61044 - Client connected - Full-access granted
-[11/10/2024 4:10:03 PM] - 192.168.0.28:62755 - Client connected - Full-access granted
-[11/10/2024 4:10:05 PM] 192.168.0.28 (Full) requested: info
-[11/10/2024 4:10:06 PM] 192.168.0.28 (Full) requested: list
-[11/10/2024 4:10:09 PM] 192.168.0.28 (Full) requested: read
-[11/10/2024 4:10:14 PM] 192.168.0.28 (Full) requested: delete
-[11/10/2024 4:10:17 PM] 192.168.0.28 (Full) requested: go
-[11/10/2024 4:10:23 PM] - 192.168.0.28:62759 - Client connected - Full-access granted
-[11/10/2024 4:10:47 PM] - 192.168.0.28:62764 - Client connected - Full-access granted
-[11/10/2024 5:55:14 PM] - 192.168.0.28:62652 - Client connected - Full-access granted
-[11/10/2024 5:55:15 PM] 192.168.0.28 (Full) requested: info
-[11/10/2024 6:55:03 PM] - 192.168.0.28:50113 - Client connected - Full-access granted
-[11/10/2024 6:55:11 PM] - 192.168.0.28:50117 - Client connected - Read-only access granted
-[11/10/2024 6:55:15 PM] 192.168.0.28 (Read-Only) requested: list
-[11/10/2024 6:55:22 PM] 192.168.0.28 (Read-Only) requested: exit
-[11/10/2024 6:55:32 PM] 192.168.0.28 (Full) requested: list
-[11/10/2024 6:55:37 PM] 192.168.0.28 (Full) requested: create test
-[11/10/2024 6:55:41 PM] 192.168.0.28 (Full) requested: write test content
-[11/10/2024 6:55:44 PM] 192.168.0.28 (Full) requested: read test
-[11/10/2024 6:55:47 PM] 192.168.0.28 (Full) requested: delete test
-[11/10/2024 6:55:50 PM] 192.168.0.28 (Full) requested: list
-[11/10/2024 6:55:55 PM] 192.168.0.28 (Full) requested: exit
-[11/10/2024 7:06:56 PM] - 192.168.0.28:50082 - Client connected - Full-access granted
-[11/10/2024 7:06:59 PM] 192.168.0.28 (Full) requested: info
-[11/10/2024 7:07:00 PM] 192.168.0.28 (Full) requested: list
-[11/10/2024 7:07:04 PM] 192.168.0.28 (Full) requested: create test
-[11/10/2024 7:07:07 PM] 192.168.0.28 (Full) requested: write test test
-[11/10/2024 7:07:09 PM] 192.168.0.28 (Full) requested: read test
-[11/10/2024 7:07:11 PM] 192.168.0.28 (Full) requested: delete tes
-[11/10/2024 7:07:13 PM] 192.168.0.28 (Full) requested: delete test
-[11/10/2024 7:07:17 PM] 192.168.0.28 (Full) requested: list
-[11/10/2024 7:07:19 PM] 192.168.0.28 (Full) requested: exit
-[11/10/2024 7:07:35 PM] - 192.168.0.28:50121 - Client connected - Read-only access granted
-[11/10/2024 7:08:18 PM] - 192.168.0.28:50133 - Client connected - Full-access granted
-[11/10/2024 7:08:26 PM] - 192.168.0.28:50146 - Client connected - Read-only access granted
-[11/10/2024 7:08:44 PM] - 192.168.0.28:50155 - Client connected - Read-only access granted
-[11/10/2024 7:08:49 PM] 192.168.0.28 (Read-Only) requested: list
-[11/10/2024 7:08:52 PM] 192.168.0.28 (Read-Only) requested: read
-[11/10/2024 7:08:54 PM] 192.168.0.28 (Read-Only) requested: exit
-[11/10/2024 7:16:47 PM] - 192.168.0.28:50421 - Client connected - Full-access granted
-[11/10/2024 7:19:30 PM] - 192.168.0.28:50528 - Client connected - Full-access granted
-[11/10/2024 7:20:06 PM] - 192.168.0.28:50548 - Client connected - Full-access granted
+[11/10/2024 9:29:39 PM] - 192.168.0.28:57985 - Client connected - Full-access granted
+[11/10/2024 9:29:46 PM] 192.168.0.28 (Full) requested: create test.txt
+[11/10/2024 9:29:57 PM] 192.168.0.28 (Full) requested: write test.txt content
+[11/10/2024 9:30:04 PM] 192.168.0.28 (Full) requested: read test.txt
+[11/10/2024 9:30:07 PM] 192.168.0.28 (Full) requested: exit
+[11/10/2024 9:40:45 PM] - 192.168.0.28:58285 - Client connected - Full-access granted
+[11/10/2024 9:40:47 PM] 192.168.0.28 (Full) requested: read
+[11/10/2024 9:40:52 PM] 192.168.0.28 (Full) requested: list
+[11/10/2024 9:40:55 PM] 192.168.0.28 (Full) requested: info

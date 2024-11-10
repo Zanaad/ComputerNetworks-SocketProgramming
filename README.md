@@ -10,16 +10,18 @@ based on the order of connection. Clients with full access can create, read, wri
 
 ### Server
 
-- Listens for incomming connections,
-- Greants access to the first connected client and read only access to the others,
-- Handles varius file operations(create, read, write, delete) based on the access,
-- Logs connection, requests and client messeges for monitoring purposes.
+- The server listens on a user-specified IP address and port number.
+- The server handles multiple client connections, up to a specified maximum. If the number of connections exceeds this limit, new connections are either rejected or queued.
+- The server processes client requests and logs them for auditing purposes, including the IP address and timestamp.
+- The server reads messages from clients and stores them for monitoring.
+- Clients that do not send messages within a specified time frame are disconnected automatically. If the client reconnects, the server can recover the connection.
+- One client is granted full access, while others are granted read-only access. Full access clients can create, read, write, and delete files. Read-only clients can only read files.
 
 ### Client
 
-- Connects to the server with a specified IP and port,
-- Receives an access level from the server,
-- Sends file operation commands to the server according to its access.
+- Clients connect to the server using a specified IP address and port.
+- Clients receive an access level (full or read-only) from the server based on the order of connection.
+- Clients with full access can perform file operations such as create, read, write, and delete. Clients with read-only access can only read files.
 
 ## Requirements for running the application:
 
@@ -70,7 +72,7 @@ ComputerNetworks-SocketProgramming/
 ├── README.md                           #Your are here
 │
 │
-└── ComputerNetworks-SocketProgramming.sln #YOU WILL OPEN THIS
+└── ComputerNetworks-SocketProgramming.sln # Solution file
 ```
 
 ## Usage
@@ -81,7 +83,7 @@ ComputerNetworks-SocketProgramming/
 2. Logs:
    - Logs are saved in the files directory
      - server_log.txt records client connections and requests.
-     - Client_Messeges_log records messeges from clients for monitoring.
+     - client_messages_log.txt records messages sent by clients for monitoring purposes.
 
 ### Running the Client
 
@@ -90,12 +92,15 @@ ComputerNetworks-SocketProgramming/
    - The Server will confirm the access level.
 2. Send Commands:
    - Full access clients:
+     - INFO: Display a list of all available commands
+     - LIST: List all files in the Files folder
      - CREATE [filename]: creates a file,
      - WRITE [filename] [content]: writes in the file specified,
      - READ [filename]: reads from the file specified,
      - DELETE [filename]: deletes the file specified,
      - EXIT: exits the application.
    - Read only access clients:
+     - LIST: List all files created by clients in the Files folder
      - READ[filename]: reads from the file specified,
      - EXIT: exits the application.
 
@@ -104,6 +109,8 @@ ComputerNetworks-SocketProgramming/
 Full access clients:
 
 ```bash
+INFO
+LIST
 CREATE testfile.txt
 WRITE testfile.txt This is a test.
 READ testfile.txt
@@ -114,14 +121,17 @@ EXIT
 Read only access clients:
 
 ```bash
+LIST
 READ testfile.txt
 EXIT
 ```
 
 ## Notes
 
-- Make sure the Server is running before you try to connect with any clients.
-- Only the first client gets full access not the others.
+- Ensure the server is running before connecting with any clients.
+- Only the first client gets full access, while others have read-only access.
+- The server handles up to the maximum number of connections set. If the limit is exceeded, new connections are either rejected or queued.
+- Clients that do not send messages within a timeout period will be disconnected, and the server will handle their reconnection if attempted.
 
 ## Credits
 
