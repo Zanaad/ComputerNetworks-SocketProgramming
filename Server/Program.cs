@@ -15,7 +15,7 @@ class Server
     private static ConcurrentDictionary<string, string> clientPermissions = new ConcurrentDictionary<string, string>();
     private static int port = 5000;
     private static int threshold = 4;
-    private static int inactivityTimeout = 300000;
+    private static int inactivityTimeout = 500000;
     private static string fullAccessClient = null;
     private static object lockObj = new object();
 
@@ -24,6 +24,7 @@ class Server
 
     private static Queue<Socket> fullAccessQueue = new Queue<Socket>();
     private static Queue<Socket> readOnlyQueue = new Queue<Socket>();
+
 
     static void Main(string[] args)
     {
@@ -46,7 +47,7 @@ class Server
         while (true)
         {
             Socket clientSocket = listener.Accept();
-            string clientKey = ((IPEndPoint)clientSocket.RemoteEndPoint).ToString(); // Unique client key
+            string clientKey = ((IPEndPoint)clientSocket.RemoteEndPoint).ToString();
 
             lock (lockObj)
             {
@@ -89,10 +90,17 @@ class Server
                 // Assign permissions for new clients based on IP address
                 if (fullAccessClient == null)
                 {
-                    fullAccessClient = clientIP; // The first client to connect gets full access
+                    fullAccessClient = clientIP; // Set full access client permanently for first client
                     clientPermission = "Full";
                     clientPermissions[clientIP] = "Full";
                     LogConnection(clientSocket, "Full-access granted");
+                }
+                else if (clientIP == fullAccessClient)
+                {
+                    // Ensure first client always gets full access even on reconnect
+                    clientPermission = "Full";
+                    clientPermissions[clientIP] = "Full";
+                    LogConnection(clientSocket, "Full-access granted (reconnect)");
                 }
                 else
                 {
@@ -168,19 +176,6 @@ class Server
             CloseClient(clientSocket, clientKey);
         }
     }
-    private static void ProcessClientRequests()
-    {
-        while (fullAccessQueue.Count > 0)
-        {
-            Socket clientSocket = fullAccessQueue.Dequeue();
-            Console.WriteLine("Processing full-access request from client.");
-        }
-        while (readOnlyQueue.Count > 0)
-        {
-            Socket clientSocket = readOnlyQueue.Dequeue();
-            Console.WriteLine("Processing read-only request from client.");
-        }
-    }
 
     private static void StartClientTimer(string clientKey, Socket clientSocket)
     {
@@ -203,7 +198,7 @@ class Server
 
     private static void CloseClient(Socket clientSocket, string clientKey)
     {
-        string clientIP = clientKey.Split(':')[0]; // Extract IP address from clientKey
+        string clientIP = clientKey.Split(':')[0];
 
         lock (lockObj)
         {
@@ -212,13 +207,11 @@ class Server
             clientTimers.TryRemove(clientKey, out _);
             Console.WriteLine($"Connection with {clientKey} closed.");
 
-            if (clientIP == fullAccessClient)
-            {
-                fullAccessClient = null; // Reset full access client IP when they disconnect
-            }
-
             // Clear permission if the client fully disconnects
-            clientPermissions.TryRemove(clientIP, out _);
+            if (clientIP != fullAccessClient) // Keep permission for first client
+            {
+                clientPermissions.TryRemove(clientIP, out _);
+            }
 
             // Handle waiting clients if any
             if (waitingClients.TryDequeue(out Socket waitingClient))
@@ -437,5 +430,17 @@ class Server
             SendMessage(clientSocket, $"Error listing directory contents: {ex.Message}");
         }
     }
-
+    private static void ProcessClientRequests()
+    {
+        while (fullAccessQueue.Count > 0)
+        {
+            Socket clientSocket = fullAccessQueue.Dequeue();
+            Console.WriteLine("Processing full-access request from client.");
+        }
+        while (readOnlyQueue.Count > 0)
+        {
+            Socket clientSocket = readOnlyQueue.Dequeue();
+            Console.WriteLine("Processing read-only request from client.");
+        }
+    }
 }
