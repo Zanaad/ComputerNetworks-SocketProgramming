@@ -10,7 +10,7 @@ based on the order of connection. Clients with full access can create, read, wri
 
 ### Server
 
-- The server listens on a user-specified IP address and port number.
+- The server automatically detects and listens on the local IPv4 address, using a default port number of 5000
 - The server handles multiple client connections, up to a specified maximum. If the number of connections exceeds this limit, new connections are either rejected or queued.
 - The server processes client requests and logs them for auditing purposes, including the IP address and timestamp.
 - The server reads messages from clients and stores them for monitoring.
@@ -132,6 +132,18 @@ EXIT
 - Only the first client gets full access, while others have read-only access.
 - The server handles up to the maximum number of connections set. If the limit is exceeded, new connections are either rejected or queued.
 - Clients that do not send messages within a timeout period will be disconnected, and the server will handle their reconnection if attempted.
+
+## Screenshots
+
+Server - Full Access Client View
+
+![server](https://github.com/user-attachments/assets/ddae9ee6-0ebe-49ad-9836-d193c81bec35)
+![admin](https://github.com/user-attachments/assets/9475009e-5218-463e-8407-e8238b0c3046)
+
+Server - Read-Only Client View
+
+![server2](https://github.com/user-attachments/assets/c84a0b19-0f5a-46cc-9c66-85db958959ce)
+![client](https://github.com/user-attachments/assets/2636b3b5-ff0e-453d-b24c-9ffe9cc9e7e6)
 
 ## Credits
 
